@@ -23,7 +23,7 @@ module Text.ParseCSV
    ) where
 
 import Prelude hiding (concat, takeWhile)
-import Control.Applicative ((<$>), (<|>), (<*), (*>), many)
+import Control.Applicative ((<$>), (<|>), (<*>), (<*), (*>), many)
 import Data.Attoparsec.Text
 import Data.Text (Text, concat)
 import Data.Text hiding (takeWhile)
@@ -42,11 +42,12 @@ unquotedField =
 
 insideQuotes :: Parser Text
 insideQuotes =
-   concat <$> many (dquotes <|> takeWhile (/= '"'))
+   append <$> takeWhile (/= '"')
+          <*> (concat <$> many (cons <$> dquotes <*> insideQuotes))
    <?> "inside of double quotes"
    where
       dquotes =
-         string "\"\"" >> return "\""
+         string "\"\"" >> return '"'
          <?> "paired double quotes"
 
 quotedField :: Parser Text
@@ -59,16 +60,18 @@ field =
    quotedField <|> unquotedField
    <?> "field"
 
-line :: Parser [Text]
-line =
+record :: Parser [Text]
+record =
    field `sepBy1` char ','
-   <?> "line"
+   <?> "record"
 
-csv :: Parser CSV
-csv =
-   line `sepBy1` lineEnd <* endOfInput
-   <?> "CSV"
+file :: Parser CSV
+file =
+   (:) <$> record
+       <*> manyTill (lineEnd *> record)
+                    (endOfInput <|> lineEnd *> endOfInput)
+   <?> "file"
 
 parseCSV :: Text -> Either String CSV
 parseCSV =
-   parseOnly csv
+   parseOnly file
