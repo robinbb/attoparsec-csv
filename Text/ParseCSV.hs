@@ -24,6 +24,7 @@ module Text.ParseCSV
 
 import Prelude hiding (concat, takeWhile)
 import Control.Applicative ((<$>), (<|>), (<*>), (<*), (*>), many)
+import Control.Monad (void)
 import Data.Attoparsec.Text
 import qualified Data.Text as T (Text, concat, cons, append)
 
@@ -31,12 +32,12 @@ type CSV = [[T.Text]]
 
 lineEnd :: Parser ()
 lineEnd =
-   (char '\n' >> return ()) <|> (string "\r\n" >> return ())
+   void (char '\n') <|> void (string "\r\n")
    <?> "end of line"
 
 unquotedField :: Parser T.Text
 unquotedField =
-   takeWhile (\c -> c /= ',' && c /= '\n' && c /= '\r' && c /= '"')
+   takeWhile (`notElem` ",\n\r\"")
    <?> "unquoted field"
 
 insideQuotes :: Parser T.Text
