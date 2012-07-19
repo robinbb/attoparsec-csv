@@ -25,42 +25,41 @@ module Text.ParseCSV
 import Prelude hiding (concat, takeWhile)
 import Control.Applicative ((<$>), (<|>), (<*>), (<*), (*>), many)
 import Data.Attoparsec.Text
-import Data.Text (Text, concat)
-import Data.Text hiding (takeWhile)
+import qualified Data.Text as T (Text, concat, cons, append)
 
-type CSV = [[Text]]
+type CSV = [[T.Text]]
 
 lineEnd :: Parser ()
 lineEnd =
    (char '\n' >> return ()) <|> (string "\r\n" >> return ())
    <?> "end of line"
 
-unquotedField :: Parser Text
+unquotedField :: Parser T.Text
 unquotedField =
    takeWhile (\c -> c /= ',' && c /= '\n' && c /= '\r' && c /= '"')
    <?> "unquoted field"
 
-insideQuotes :: Parser Text
+insideQuotes :: Parser T.Text
 insideQuotes =
-   append <$> takeWhile (/= '"')
-          <*> (concat <$> many (cons <$> dquotes <*> insideQuotes))
+   T.append <$> takeWhile (/= '"')
+            <*> (T.concat <$> many (T.cons <$> dquotes <*> insideQuotes))
    <?> "inside of double quotes"
    where
       dquotes =
          string "\"\"" >> return '"'
          <?> "paired double quotes"
 
-quotedField :: Parser Text
+quotedField :: Parser T.Text
 quotedField =
    char '"' *> insideQuotes <* char '"'
    <?> "quoted field"
 
-field :: Parser Text
+field :: Parser T.Text
 field =
    quotedField <|> unquotedField
    <?> "field"
 
-record :: Parser [Text]
+record :: Parser [T.Text]
 record =
    field `sepBy1` char ','
    <?> "record"
@@ -72,6 +71,6 @@ file =
                     (endOfInput <|> lineEnd *> endOfInput)
    <?> "file"
 
-parseCSV :: Text -> Either String CSV
+parseCSV :: T.Text -> Either String CSV
 parseCSV =
    parseOnly file
