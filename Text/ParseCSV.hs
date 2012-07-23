@@ -32,7 +32,7 @@ type CSV = [[T.Text]]
 
 lineEnd :: Parser ()
 lineEnd =
-   void (char '\n') <|> void (string "\r\n")
+   void (char '\n') <|> void (string "\r\n") <|> void (char '\r')
    <?> "end of line"
 
 unquotedField :: Parser T.Text
