@@ -16,7 +16,7 @@ cabal-version:       >=1.8
 extra-source-files:  README.md
 
 library
-  build-depends: base ==4.5.*
+  build-depends: base >= 4.5 && < 4.7
                , text
                , attoparsec   
   exposed-modules: Text.ParseCSV
